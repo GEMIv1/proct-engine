@@ -42,15 +42,15 @@ def process_message(body: bytes) -> dict:
         print(f" [>] Message parsed successfully. Top-level keys: {list(raw_data.keys())}")
 
         request = CheatingDetectionRequest(
-            quiz_submission_id=raw_data.get("QuizSubmissionId", raw_data.get("quiz_submission_id", "")),
-            quiz_id=raw_data.get("QuizId", raw_data.get("quiz_id", "")),
-            student_user_id=raw_data.get("StudentUserId", raw_data.get("student_user_id", "")),
-            user_full_name=raw_data.get("UserFullName", raw_data.get("user_full_name", "")),
-            student_id_in_course=raw_data.get("StudentIdInCourse", raw_data.get("student_id_in_course")),
-            video_path=raw_data.get("VideoPath", raw_data.get("video_path", "")),
-            video_size=raw_data.get("VideoSize", raw_data.get("video_size", 0)),
-            video_duration=raw_data.get("VideoDuration", raw_data.get("video_duration", "")),
-            submitted_at=raw_data.get("SubmittedAt", raw_data.get("submitted_at", "")),
+            quiz_submission_id=raw_data.get("quizSubmissionId", raw_data.get("QuizSubmissionId", raw_data.get("quiz_submission_id", ""))),
+            quiz_id=raw_data.get("quizId", raw_data.get("QuizId", raw_data.get("quiz_id", ""))),
+            student_user_id=raw_data.get("studentUserId", raw_data.get("StudentUserId", raw_data.get("student_user_id", ""))),
+            user_full_name=raw_data.get("userFullName", raw_data.get("UserFullName", raw_data.get("user_full_name", ""))),
+            student_id_in_course=raw_data.get("studentIdInCourse", raw_data.get("StudentIdInCourse", raw_data.get("student_id_in_course"))),
+            video_path=raw_data.get("videoPath", raw_data.get("VideoPath", raw_data.get("video_path", ""))),
+            video_size=raw_data.get("videoSize", raw_data.get("VideoSize", raw_data.get("video_size", 0))),
+            video_duration=raw_data.get("videoDuration", raw_data.get("VideoDuration", raw_data.get("video_duration", ""))),
+            submitted_at=raw_data.get("submittedAt", raw_data.get("SubmittedAt", raw_data.get("submitted_at", ""))),
         )
         video_path = request.video_path
         config = get_config()
