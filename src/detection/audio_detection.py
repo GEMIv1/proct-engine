@@ -3,10 +3,8 @@ import numpy as np
 import threading
 from collections import deque
 from typing import Optional
-import time
 
 from models import AppConfig, AlertType
-from utils.alert_logger import AlertLogger
 
 
 class AudioMonitor:
@@ -14,7 +12,6 @@ class AudioMonitor:
         self,
         config: AppConfig,
         alert_system=None,
-        alert_logger: Optional[AlertLogger] = None,
     ):
         """
         Parameters
@@ -24,8 +21,6 @@ class AudioMonitor:
         alert_system:
             Optional :class:`~utils.alert_system.AlertSystem` for voice alerts.
             Accepts ``None`` for headless / test environments.
-        alert_logger:
-            Optional :class:`~utils.alert_logger.AlertLogger` for event logging.
         """
         self.audio_config = config.detection.audio_monitoring
         self.sample_rate = self.audio_config.sample_rate
@@ -35,7 +30,6 @@ class AudioMonitor:
         self.running = False
         self.audio_buffer: deque = deque(maxlen=15)  # 480ms buffer
         self.alert_system = alert_system
-        self.alert_logger = alert_logger
 
         if self.audio_config.whisper_enabled:
             import whisper  # optional heavy dependency
@@ -60,11 +54,6 @@ class AudioMonitor:
         try:
             p = pyaudio.PyAudio()
         except Exception as e:
-            if self.alert_logger:
-                self.alert_logger.log_alert(
-                    AlertType.WHISPER_ERROR,
-                    f"Failed to initialize PyAudio: {str(e)}"
-                )
             return
 
         stream = None
@@ -77,11 +66,6 @@ class AudioMonitor:
                 frames_per_buffer=self.chunk_size
             )
         except Exception as e:
-            if self.alert_logger:
-                self.alert_logger.log_alert(
-                    AlertType.WHISPER_ERROR,
-                    f"Failed to open audio input stream: {str(e)}"
-                )
             p.terminate()
             return
 
@@ -124,9 +108,6 @@ class AudioMonitor:
         if self.alert_system:
             self.alert_system.speak_alert(AlertType.VOICE_DETECTED)
 
-        if self.alert_logger:
-            self.alert_logger.log_alert(AlertType.VOICE_DETECTED, "Voice activity detected")
-
         if self.audio_config.whisper_enabled and self.whisper_model:
             self._process_with_whisper()
 
@@ -140,11 +121,8 @@ class AudioMonitor:
                 language='en'
             )
 
-            text = result['text'].strip().lower()
-            if any(word in text for word in ['help', 'answer', 'whisper']):
-                if self.alert_system:
+            if self.alert_system:
                     self.alert_system.speak_alert(AlertType.SPEECH_VIOLATION)
 
         except Exception as e:
-            if self.alert_logger:
-                self.alert_logger.log_alert(AlertType.WHISPER_ERROR, str(e))
+            pass

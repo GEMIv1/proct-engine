@@ -38,17 +38,11 @@ detection:
     whisper_enabled: false  # Enable only when needed
     whisper_model: "tiny.en"
         
-logging:
-  log_path: "./logs"
-  alert_cooldown: 10          # seconds
-  alert_system:
-    cooldown: 10        # Minimum seconds between same alert
+alert:
+  cooldown: 10                # Minimum seconds between same alert
 
 
 global:
-  output_path: "./reports"
-
-reporting:
   severity_levels:
     FACE_DISAPPEARED: 1
     GAZE_AWAY: 2

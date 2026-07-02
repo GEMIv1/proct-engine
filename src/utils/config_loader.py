@@ -14,18 +14,16 @@ import os
 import yaml
 
 from models import (
-    AlertSystemConfig,
+    AlertConfig,
     AppConfig,
     AudioMonitoringConfig,
     DetectionConfig,
     EyeDetectionConfig,
     FaceDetectionConfig,
     GlobalConfig,
-    LoggingConfig,
     MouthMonitoringConfig,
     MultiFaceConfig,
     ObjectDetectionConfig,
-    ReportingConfig,
     VideoConfig,
     RabbitMQConfig,
 )
@@ -122,24 +120,14 @@ def load_config(path: Path | str | None = None) -> AppConfig:
         audio_monitoring=audio,
     )
 
-    lg = raw.get("logging", {})
-    alert_sys_cfg = lg.get("alert_system", {})
-    alert_system = AlertSystemConfig(
-        cooldown=alert_sys_cfg.get("cooldown", 10),
-    )
-    logging_cfg = LoggingConfig(
-        log_path=lg.get("log_path", "./logs"),
-        alert_cooldown=lg.get("alert_cooldown", 10),
-        alert_system=alert_system,
+    al = raw.get("alert", {})
+    alert = AlertConfig(
+        cooldown=al.get("cooldown", 10),
     )
 
     g = raw.get("global", {})
     global_cfg = GlobalConfig(
-        output_path=g.get("output_path", "./reports"),
-    )
-    r = raw.get("reporting", {})
-    reporting = ReportingConfig(
-        severity_levels=r.get("severity_levels", {}),
+        severity_levels=g.get("severity_levels", {}),
     )
     rmq = raw.get("rabbitmq", {})
     rabbitmq = RabbitMQConfig(
@@ -156,8 +144,7 @@ def load_config(path: Path | str | None = None) -> AppConfig:
     return AppConfig(
         video=video,
         detection=detection,
-        logging=logging_cfg,
-        reporting=reporting,
+        alert=alert,
         global_=global_cfg,
         rabbitmq=rabbitmq,
     )

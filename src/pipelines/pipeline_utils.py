@@ -19,12 +19,10 @@ from detection.object_detection import ObjectDetector
 
 if TYPE_CHECKING:
     from models import AppConfig
-    from utils.alert_logger import AlertLogger
 
 
 def build_detectors(
     config: "AppConfig",
-    alert_logger: "AlertLogger",
 ) -> tuple[BaseDetector, BaseDetector, BaseDetector, BaseDetector, BaseDetector]:
     """Construct and wire all CV detectors.
 
@@ -32,18 +30,15 @@ def build_detectors(
     ----------
     config:
         Fully-loaded :class:`~models.AppConfig` instance.
-    alert_logger:
-        :class:`~utils.alert_logger.AlertLogger` instance that will receive
-        internal detector alert events.
 
     Returns
     -------
     tuple
         ``(face, gaze, mouth, multi_face, object_detector)``
     """
-    face = FaceDetector(config, alert_logger=alert_logger)
+    face = FaceDetector(config)
     gaze = GazeDetector(config, smoothing=5)
-    mouth = MouthMonitor(config, alert_logger=alert_logger)
-    multi = MultiFaceDetector(config, alert_logger=alert_logger)
-    obj = ObjectDetector(config, alert_logger=alert_logger)
+    mouth = MouthMonitor(config)
+    multi = MultiFaceDetector(config)
+    obj = ObjectDetector(config)
     return face, gaze, mouth, multi, obj

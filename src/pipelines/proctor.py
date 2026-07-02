@@ -1,56 +1,78 @@
 """
-ExamProctor — high-level facade over the video detection pipeline.
+ExamProctor — high-level facade over the proctoring detection pipelines (video & live).
 
-Used by the RabbitMQ worker to process a video and return a result dict
-that maps to :class:`~models.messaging.CheatingDetectionResult` fields.
+Provides a unified interface for analyzing recorded video files and initiating
+live webcam-based proctoring sessions, formatting the final outputs consistently.
 
-Usage::
+Usage (Recorded Video)::
 
     from proctor import ExamProctor
     proctor = ExamProctor()
     result  = proctor.process_video("/path/to/video.mp4")
+
+Usage (Live Camera Session)::
+
+    from proctor import ExamProctor
+    proctor = ExamProctor()
+    result  = proctor.process_live(preview=True)
 """
 
 import json
 from collections import Counter
 from datetime import datetime, timezone
+from typing import Union
 
 from models import ViolationType
 from utils.config_loader import load_config
-from video_pipeline import process_video
+from pipelines.video_pipeline import process_video
+from pipelines.live_pipeline import process_live
 
 
 class ExamProctor:
-    """High-level facade around :func:`~video_pipeline.process_video`.
+    """High-level facade around proctoring execution pipelines.
 
-    Instantiated by the RabbitMQ worker to process a single video and
-    return a result dict that maps directly to
-    :class:`~models.messaging.CheatingDetectionResult` fields.
+    Unifies the processing loop, violation accumulation, risk scoring,
+    and report generation for both live webcam streams and pre-recorded videos.
     """
 
     def __init__(self):
         self.config = load_config()
-        # Severity levels come exclusively from config — no fallback duplication
-        self.severity_map: dict[str, int] = self.config.reporting.severity_levels
+        self.severity_map: dict[str, int] = self.config.global_.severity_levels
 
     def process_video(self, video_path: str, student_info: dict = None) -> dict:
-        """Run the full detection pipeline and return a result dict."""
+        """Run the recorded video detection pipeline. (Retained for backward compatibility)."""
+        return self.process(mode="video", source=video_path, student_info=student_info, preview=False)
 
+    def process_live(self, student_info: dict = None, preview: bool = True) -> dict:
+        """Run the live webcam proctoring session."""
+        return self.process(mode="live", source=self.config.video.source, student_info=student_info, preview=preview)
+
+    def process(self, mode: str, source: Union[str, int], student_info: dict = None, preview: bool = True) -> dict:
+        """Core unified processor. Coordinates input modes and aggregates violation summaries."""
         if student_info is None:
             student_info = {
-                "id": "WORKER_ANALYSIS",
+                "id": "WORKER_ANALYSIS" if mode == "video" else "STUDENT_001",
                 "name": "Unknown Student",
                 "exam": "Automated Analysis",
                 "course": "N/A",
             }
 
-        result = process_video(
-            video_path=video_path,
-            config=self.config,
-            preview=False,
-            save_output=False,
-            student_info=student_info,
-        )
+        if mode == "video":
+            result = process_video(
+                video_path=str(source),
+                config=self.config,
+                preview=preview,
+                save_output=False,
+                student_info=student_info,
+            )
+        elif mode == "live":
+            result = process_live(
+                config=self.config,
+                student_info=student_info,
+                preview=preview,
+            )
+        else:
+            raise ValueError(f"Unknown proctoring mode: {mode}")
 
         violations = result["violations"]
 

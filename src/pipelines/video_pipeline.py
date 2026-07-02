@@ -15,8 +15,6 @@ from models import (
     ViolationEntry,
     ViolationType,
 )
-from utils.alert_logger import AlertLogger
-from utils.screenshot_utils import ViolationCapturer
 from .pipeline_utils import build_detectors
 
 FRAME_SKIP = 1
@@ -76,13 +74,11 @@ def process_video(video_path, config, preview=False, save_output=False, student_
     print(f"  Save     : {'ON' if save_output else 'OFF'}")
     print(f"{'=' * 60}\n")
 
-    alert_logger = AlertLogger(config)
-    violation_capturer = ViolationCapturer(config)
     violations = []
 
     stack = ExitStack()
     face_detector, gaze_detector, mouth_monitor, multi_face_detector, object_detector = \
-        build_detectors(config, alert_logger)
+        build_detectors(config)
 
     stack.enter_context(face_detector)
     stack.enter_context(gaze_detector)
@@ -156,8 +152,6 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                 frames_absent = frame_id - face_absent_start_frame
                 if frames_absent >= face_absent_threshold_frames:
                     duration = frames_absent / video_fps
-                    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                    cap_res = violation_capturer.capture_violation(frame, ViolationType.FACE_DISAPPEARED, ts_str)
                     violations.append(
                         ViolationEntry(
                             type=ViolationType.FACE_DISAPPEARED,
@@ -165,31 +159,27 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                             metadata={
                                 'duration': f'{duration:.1f} seconds',
                                 'video_time': video_time,
-                                'image_path': cap_res.get('image_path') if cap_res else None
+                                'image_path': None
                             }
                         )
                     )
                     face_absent_start_frame = None
             elif results.multiple_faces:
                 face_absent_start_frame = None
-                ts_str = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                cap_res = violation_capturer.capture_violation(frame, ViolationType.MULTIPLE_FACES, ts_str)
                 violations.append(
                     ViolationEntry(
                         type=ViolationType.MULTIPLE_FACES,
                         timestamp=video_timestamp,
-                        metadata={'video_time': video_time, 'image_path': cap_res.get('image_path') if cap_res else None}
+                        metadata={'video_time': video_time, 'image_path': None}
                     )
                 )
             elif results.objects_detected:
                 face_absent_start_frame = None
-                ts_str = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                cap_res = violation_capturer.capture_violation(frame, ViolationType.OBJECT_DETECTED, ts_str)
                 violations.append(
                     ViolationEntry(
                         type=ViolationType.OBJECT_DETECTED,
                         timestamp=video_timestamp,
-                        metadata={'video_time': video_time, 'image_path': cap_res.get('image_path') if cap_res else None}
+                        metadata={'video_time': video_time, 'image_path': None}
                     )
                 )
             elif gaze_state.gaze.is_away and gaze_state.gaze_conf >= 0.45:
@@ -199,8 +189,6 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                 frames_away = frame_id - gaze_away_start_frame
                 if frames_away >= gaze_away_threshold_frames:
                     duration = frames_away / video_fps
-                    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                    cap_res = violation_capturer.capture_violation(frame, ViolationType.GAZE_AWAY, ts_str)
                     violations.append(
                         ViolationEntry(
                             type=ViolationType.GAZE_AWAY,
@@ -208,7 +196,7 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                             metadata={
                                 'duration': f'{duration:.1f} seconds',
                                 'video_time': video_time,
-                                'image_path': cap_res.get('image_path') if cap_res else None
+                                'image_path': None
                             }
                         )
                     )
@@ -218,13 +206,11 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                 gaze_away_start_frame = None
 
             if results.mouth_moving:
-                ts_str = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                cap_res = violation_capturer.capture_violation(frame, ViolationType.MOUTH_MOVING, ts_str)
                 violations.append(
                     ViolationEntry(
                         type=ViolationType.MOUTH_MOVING,
                         timestamp=video_timestamp,
-                        metadata={'video_time': video_time, 'image_path': cap_res.get('image_path') if cap_res else None}
+                        metadata={'video_time': video_time, 'image_path': None}
                     )
                 )
 

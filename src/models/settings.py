@@ -59,27 +59,9 @@ class AudioMonitoringConfig:
 
 
 @dataclass
-class AlertSystemConfig:
+class AlertConfig:
     cooldown: int = 10
 
-
-@dataclass
-class LoggingConfig:
-    log_path: str = "./logs"
-    alert_cooldown: int = 10
-    alert_system: AlertSystemConfig = field(default_factory=AlertSystemConfig)
-
-
-@dataclass
-class ReportingConfig:
-    severity_levels: dict[str, int] = field(default_factory=lambda: {
-        "FACE_DISAPPEARED": 1,
-        "GAZE_AWAY": 2,
-        "MOUTH_MOVING": 3,
-        "MULTIPLE_FACES": 4,
-        "OBJECT_DETECTED": 5,
-        "AUDIO_DETECTED": 3,
-    })
 
 
 @dataclass
@@ -94,7 +76,14 @@ class DetectionConfig:
 
 @dataclass
 class GlobalConfig:
-    output_path: str = "./reports"
+    severity_levels: dict[str, int] = field(default_factory=lambda: {
+        "FACE_DISAPPEARED": 1,
+        "GAZE_AWAY": 2,
+        "MOUTH_MOVING": 3,
+        "MULTIPLE_FACES": 4,
+        "OBJECT_DETECTED": 5,
+        "AUDIO_DETECTED": 3,
+    })
 
 
 @dataclass
@@ -114,7 +103,6 @@ class AppConfig:
     """Top‑level application configuration – aggregates every section."""
     video: VideoConfig = field(default_factory=VideoConfig)
     detection: DetectionConfig = field(default_factory=DetectionConfig)
-    logging: LoggingConfig = field(default_factory=LoggingConfig)
-    reporting: ReportingConfig = field(default_factory=ReportingConfig)
+    alert: AlertConfig = field(default_factory=AlertConfig)
     global_: GlobalConfig = field(default_factory=GlobalConfig)
     rabbitmq: RabbitMQConfig = field(default_factory=RabbitMQConfig)

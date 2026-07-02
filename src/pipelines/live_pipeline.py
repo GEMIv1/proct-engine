@@ -1,32 +1,27 @@
 import cv2
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import ExitStack
 
 from utils.config_loader import load_config
 from utils.annotation import annotate_frame
 from models import (
     DetectionResult,
-    GazeDirection,
     GazeState,
     ViolationEntry,
     ViolationType,
 )
 from detection.audio_detection import AudioMonitor
 from utils.video_utils import VideoRecorder
-from utils.alert_logger import AlertLogger
 from utils.alert_system import AlertSystem
-from utils.screenshot_utils import ViolationCapturer
-from pipeline_utils import build_detectors
+from .pipeline_utils import build_detectors
 
 FRAME_SKIP = 2
 GAZE_FRAME_SKIP = 2
 
 
 def _handle_violation(
-    frame,
     violation_type: ViolationType,
     alert_system: AlertSystem,
-    violation_capturer: ViolationCapturer,
     violations: list[ViolationEntry],
     results: DetectionResult,
     gaze_state: GazeState,
@@ -34,12 +29,10 @@ def _handle_violation(
 ):
     """Centralised violation handling: speak alert, capture screenshot, log."""
     alert_system.speak_alert(violation_type)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    cap_res = violation_capturer.capture_violation(frame, violation_type, timestamp)
+    timestamp = datetime.now(timezone.utc).isoformat()
 
     metadata = extra_metadata or {}
     metadata.update({
-        "image_path": cap_res.get("image_path") if cap_res else None,
         "frame": {
             "face_present": results.face_present,
             "gaze_direction": results.gaze_direction.value,
@@ -61,36 +54,27 @@ def _handle_violation(
     )
 
 
-def main():
-    config = load_config()
-    alert_logger = AlertLogger(config)
+def process_live(config=None, student_info=None, preview=True):
+    if config is None:
+        config = load_config()
     alert_system = AlertSystem(config)
-    violation_capturer = ViolationCapturer(config)
     violations = []
-
-    # Placeholder student info — will be replaced with CLI args or user prompt later
-    student_info = {
-        "id": "STUDENT_001",
-        "name": "John Doe",
-        "exam": "Final Examination",
-        "course": "Computer Science 101",
-    }
 
     video_recorder = VideoRecorder(config)
 
     audio_monitor = AudioMonitor(
         config,
         alert_system=alert_system,
-        alert_logger=alert_logger,
     )
 
     if config.detection.audio_monitoring.enabled:
         audio_monitor.start()
 
+    frame_id = 0
     try:
         stack = ExitStack()
         face_detector, gaze_detector, mouth_monitor, multi_face_detector, object_detector = \
-            build_detectors(config, alert_logger)
+            build_detectors(config)
 
         stack.enter_context(face_detector)
         stack.enter_context(gaze_detector)
@@ -104,8 +88,6 @@ def main():
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.video.resolution[1])
 
         last_gaze_state = GazeState()
-        last_annotated_frame = None
-        frame_id = 0
         gaze_counter = 0
         gaze_away_start = None
         face_absent_start = None
@@ -115,14 +97,10 @@ def main():
             if not ret:
                 break
 
+            frame_id += 1
             frame = cv2.flip(frame, 1)
 
             if frame_id % FRAME_SKIP != 0:
-                frame_id += 1
-                if last_annotated_frame is not None:
-                    cv2.imshow('Exam Proctoring', last_annotated_frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
                 continue
 
             results = DetectionResult(
@@ -152,8 +130,8 @@ def main():
                 face_absent_duration = (datetime.now() - face_absent_start).total_seconds()
                 if face_absent_duration >= config.detection.face.face_absent_threshold:
                     _handle_violation(
-                        frame, ViolationType.FACE_DISAPPEARED,
-                        alert_system, violation_capturer, violations,
+                        ViolationType.FACE_DISAPPEARED,
+                        alert_system, violations,
                         results, gaze_state,
                         {"duration": f"{face_absent_duration:.1f} seconds"},
                     )
@@ -161,16 +139,16 @@ def main():
             elif results.multiple_faces:
                 face_absent_start = None
                 _handle_violation(
-                    frame, ViolationType.MULTIPLE_FACES,
-                    alert_system, violation_capturer, violations,
+                    ViolationType.MULTIPLE_FACES,
+                    alert_system, violations,
                     results, gaze_state,
                     None,
                 )
             elif results.objects_detected:
                 face_absent_start = None
                 _handle_violation(
-                    frame, ViolationType.OBJECT_DETECTED,
-                    alert_system, violation_capturer, violations,
+                    ViolationType.OBJECT_DETECTED,
+                    alert_system, violations,
                     results, gaze_state,
                     None,
                 )
@@ -183,8 +161,8 @@ def main():
                 gaze_away_duration = (datetime.now() - gaze_away_start).total_seconds()
                 if gaze_away_duration >= config.detection.eyes.gaze_threshold:
                     _handle_violation(
-                        frame, ViolationType.GAZE_AWAY,
-                        alert_system, violation_capturer, violations,
+                        ViolationType.GAZE_AWAY,
+                        alert_system, violations,
                         results, gaze_state,
                         {"duration": f"{gaze_away_duration:.1f} seconds"},
                     )
@@ -195,25 +173,25 @@ def main():
 
             if results.mouth_moving:
                 _handle_violation(
-                    frame, ViolationType.MOUTH_MOVING,
-                    alert_system, violation_capturer, violations,
+                    ViolationType.MOUTH_MOVING,
+                    alert_system, violations,
                     results, gaze_state,
-                    {"duration": "5+ seconds"},
+                    None,
                 )
 
             annotated = annotate_frame(frame, results, gaze_state)
-            last_annotated_frame = annotated
             video_recorder.record_frame(annotated)
 
-            cv2.imshow('Exam Proctoring', annotated)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if preview:
+                cv2.imshow('Exam Proctoring', annotated)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
             frame_id += 1
 
     finally:
         # Stop audio monitor if active
-        if config.detection.audio_monitoring.enabled and 'audio_monitor' in locals():
+        if config.detection.audio_monitoring.enabled and 'audio_monitor' in locals() and audio_monitor is not None:
             try:
                 audio_monitor.stop()
             except Exception:
@@ -225,12 +203,20 @@ def main():
         print("Exam session ended.")
 
         video_data = video_recorder.stop_recording()
-        print(f"Webcam recording saved: {video_data.filename}")
+        if video_data:
+            print(f"Webcam recording saved: {video_data.filename}")
 
-        if cap.isOpened():
+        if 'cap' in locals() and cap.isOpened():
             cap.release()
-        cv2.destroyAllWindows()
+        if preview:
+            cv2.destroyAllWindows()
+
+    return {
+        "violations": violations,
+        "frames_processed": frame_id,
+        "output_path": video_data.filename if video_data else None,
+    }
 
 
 if __name__ == '__main__':
-    main()
+    process_live(preview=True)

@@ -4,7 +4,6 @@ import numpy as np
 from typing import Optional
 
 from models import AppConfig, AlertType
-from utils.alert_logger import AlertLogger
 from .base import BaseDetector
 
 
@@ -16,7 +15,7 @@ class _LandmarkIndex:
 
 
 class MouthMonitor(BaseDetector):
-    def __init__(self, config: AppConfig, alert_logger: Optional[AlertLogger] = None):
+    def __init__(self, config: AppConfig):
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(
             max_num_faces=1,
             refine_landmarks=True,
@@ -28,7 +27,6 @@ class MouthMonitor(BaseDetector):
         self.open_threshold = config.detection.mouth_monitor.open_threshold
         self.width_threshold = config.detection.mouth_monitor.width_threshold
         self.mouth_movement_count = 0
-        self.alert_logger = alert_logger
 
     def close(self):
         """Close MediaPipe FaceMesh resources."""
@@ -63,11 +61,7 @@ class MouthMonitor(BaseDetector):
     def _update_alert_state(self, moving: bool) -> None:
         if moving:
             self.mouth_movement_count += 1
-            if self.mouth_movement_count > self.mouth_threshold and self.alert_logger:
-                self.alert_logger.log_alert(
-                    AlertType.MOUTH_MOVEMENT,
-                    "Excessive mouth movement detected (possible talking)",
-                )
+            if self.mouth_movement_count > self.mouth_threshold:
                 self.mouth_movement_count = 0
         else:
             self.mouth_movement_count = max(0, self.mouth_movement_count - 1)

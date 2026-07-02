@@ -5,12 +5,11 @@ from datetime import datetime
 from typing import Optional
 
 from models import AppConfig, AlertType
-from utils.alert_logger import AlertLogger
 from .base import BaseDetector
 
 
 class ObjectDetector(BaseDetector):
-    def __init__(self, config: AppConfig, alert_logger: Optional[AlertLogger] = None):
+    def __init__(self, config: AppConfig):
         self.obj_config = config.detection.objects
         self.model = None
         self.class_map = {
@@ -18,7 +17,6 @@ class ObjectDetector(BaseDetector):
             1: 'cell phone',
             2: 'headphone',
         }
-        self.alert_logger = alert_logger
         self.detection_interval = self.obj_config.detection_interval
         self.frame_count = 0
         self._initialize_model()
@@ -65,12 +63,6 @@ class ObjectDetector(BaseDetector):
                         detected = True
                         label = self.class_map[cls]
 
-                        if self.alert_logger:
-                            self.alert_logger.log_alert(
-                                AlertType.FORBIDDEN_OBJECT,
-                                f"Detected {label} with confidence {conf:.2f}"
-                            )
-
                         if visualize:
                             x1, y1, x2, y2 = box.xyxy[0]
                             x1 = int(x1 * (orig_w / new_w))
@@ -86,11 +78,6 @@ class ObjectDetector(BaseDetector):
             return detected
 
         except Exception as e:
-            if self.alert_logger:
-                self.alert_logger.log_alert(
-                    AlertType.OBJECT_DETECTION_ERROR,
-                    f"Object detection failed: {str(e)}"
-                )
             return False
 
     def close(self):

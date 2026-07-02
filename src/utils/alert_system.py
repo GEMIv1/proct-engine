@@ -12,7 +12,7 @@ from models import AppConfig, AlertType, ViolationType
 class AlertSystem:
     def __init__(self, config: AppConfig):
         pygame.mixer.init()
-        self.alert_cooldown = config.logging.alert_cooldown
+        self.alert_cooldown = config.alert.cooldown
         self.last_alert_time: dict = {}
 
         self.alerts: dict[Union[ViolationType, AlertType], str] = {
