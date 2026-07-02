@@ -1,0 +1,33 @@
+# Virtual environment
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# Finetune data & notebooks
+finetune/
+
+# Test data
+test_data/
+
+# Runtime output (mounted as volumes)
+recordings/
+reports/
+logs/
+submissions/
+
+# Exclude all models except finetuned
+models/*
+!models/yolo26s_finetuned.pt
+
+# Docker files
+dockerfile
+docker-compose.yml
+.dockerignore
+
+# IDE / OS
+__pycache__/
+*.pyc
+.idea/
+.vscode/

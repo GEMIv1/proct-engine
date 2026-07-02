@@ -1,0 +1,16 @@
+services:
+  detector-worker:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: cheating-detection-worker
+    environment:
+      - RABBITMQ_HOST=host.docker.internal
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASS=admin
+      - SUBMISSIONS_BASE_PATH=/app/submissions
+    volumes:
+      - ./reports:/app/reports
+      - ./local_submissions:/app/submissions
+    restart: on-failure

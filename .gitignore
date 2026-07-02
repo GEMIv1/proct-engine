@@ -1,0 +1,97 @@
+# --- Python Environment ---
+.venv/
+venv/
+env/
+ENV/
+bin/
+lib/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Python Caching & Compiled Files ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.mypy_cache/
+.pyre/
+.pytype/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Project-Specific Large Directories ---
+# Large test videos and media
+test_data/
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# Recorded sessions and local outputs
+recordings/
+reports/
+logs/
+src/logs/
+submissions/
+
+# --- Model Weights and Large Binary Files ---
+# Model files are too large for Git; track/version them separately (e.g. DVC, Git LFS, or cloud storage)
+/models/
+!/src/models/
+*.pt
+*.pth
+*.onnx
+*.weights
+*.bin
+*.h5
+*.pb
+*.tflite
+*.ckpt
+
+# --- Finetuning Datasets & Training Runs ---
+# Exclude training datasets and run insights/checkpoints
+finetune/data/
+finetune/insights/
+
+# --- IDEs and Editors ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# --- System Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
