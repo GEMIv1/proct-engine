@@ -65,4 +65,4 @@ rabbitmq:
   vhost: "/"
   request_queue: "cheating-detection-queue"
   response_queue: "cheating-detection-result-queue"
-  submissions_base_path: "D:/projects/Graduation/Backend-Greyboard/FCAI.Greyboard.API/wwwroot/uploads/courses/"
+  submissions_base_path: ""
