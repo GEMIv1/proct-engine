@@ -54,8 +54,6 @@ class AudioMonitoringConfig:
     sample_rate: int = 16000
     energy_threshold: float = 0.001
     zcr_threshold: float = 0.35
-    whisper_enabled: bool = False
-    whisper_model: str = "tiny.en"
 
 
 @dataclass

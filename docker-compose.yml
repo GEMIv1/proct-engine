@@ -11,6 +11,7 @@ services:
       - RABBITMQ_PASS=admin
       - SUBMISSIONS_BASE_PATH=/app/submissions
     volumes:
+      # Mounts the reports directory (containing violation_captures screenshots) so they are exposed on the host
       - ./reports:/app/reports
       - ./local_submissions:/app/submissions
     restart: on-failure

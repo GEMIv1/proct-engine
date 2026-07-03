@@ -2,6 +2,8 @@ import cv2
 from datetime import datetime, timezone
 from contextlib import ExitStack
 
+import numpy as np
+
 from utils.config_loader import load_config
 from utils.annotation import annotate_frame
 from models import (
@@ -13,7 +15,8 @@ from models import (
 from detection.audio_detection import AudioMonitor
 from utils.video_utils import VideoRecorder
 from utils.alert_system import AlertSystem
-from .pipeline_utils import build_detectors
+from utils.pipeline_utils import build_detectors
+from utils.screenshot_capture import ScreenshotCapture
 
 FRAME_SKIP = 2
 GAZE_FRAME_SKIP = 2
@@ -25,13 +28,19 @@ def _handle_violation(
     violations: list[ViolationEntry],
     results: DetectionResult,
     gaze_state: GazeState,
+    frame: np.ndarray,
+    screenshot_capture: ScreenshotCapture,
     extra_metadata: dict | None = None,
 ):
     """Centralised violation handling: speak alert, capture screenshot, log."""
     alert_system.speak_alert(violation_type)
     timestamp = datetime.now(timezone.utc).isoformat()
 
+    # Capture an annotated screenshot of the violation frame
+    image_path = screenshot_capture.capture(frame, violation_type.value, timestamp)
+
     metadata = extra_metadata or {}
+    metadata["image_path"] = image_path
     metadata.update({
         "frame": {
             "face_present": results.face_present,
@@ -58,6 +67,7 @@ def process_live(config=None, student_info=None, preview=True):
     if config is None:
         config = load_config()
     alert_system = AlertSystem(config)
+    screenshot_capture = ScreenshotCapture(cooldown=config.alert.cooldown)
     violations = []
 
     video_recorder = VideoRecorder(config)
@@ -133,6 +143,7 @@ def process_live(config=None, student_info=None, preview=True):
                         ViolationType.FACE_DISAPPEARED,
                         alert_system, violations,
                         results, gaze_state,
+                        frame, screenshot_capture,
                         {"duration": f"{face_absent_duration:.1f} seconds"},
                     )
                     face_absent_start = None
@@ -142,7 +153,7 @@ def process_live(config=None, student_info=None, preview=True):
                     ViolationType.MULTIPLE_FACES,
                     alert_system, violations,
                     results, gaze_state,
-                    None,
+                    frame, screenshot_capture,
                 )
             elif results.objects_detected:
                 face_absent_start = None
@@ -150,7 +161,7 @@ def process_live(config=None, student_info=None, preview=True):
                     ViolationType.OBJECT_DETECTED,
                     alert_system, violations,
                     results, gaze_state,
-                    None,
+                    frame, screenshot_capture,
                 )
             elif gaze_state.gaze.is_away and gaze_state.gaze_conf >= 0.45:
                 face_absent_start = None
@@ -164,6 +175,7 @@ def process_live(config=None, student_info=None, preview=True):
                         ViolationType.GAZE_AWAY,
                         alert_system, violations,
                         results, gaze_state,
+                        frame, screenshot_capture,
                         {"duration": f"{gaze_away_duration:.1f} seconds"},
                     )
                     gaze_away_start = None
@@ -176,7 +188,7 @@ def process_live(config=None, student_info=None, preview=True):
                     ViolationType.MOUTH_MOVING,
                     alert_system, violations,
                     results, gaze_state,
-                    None,
+                    frame, screenshot_capture,
                 )
 
             annotated = annotate_frame(frame, results, gaze_state)

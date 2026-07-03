@@ -107,8 +107,6 @@ def load_config(path: Path | str | None = None) -> AppConfig:
         sample_rate=audio_cfg.get("sample_rate", 16000),
         energy_threshold=audio_cfg.get("energy_threshold", 0.001),
         zcr_threshold=audio_cfg.get("zcr_threshold", 0.35),
-        whisper_enabled=audio_cfg.get("whisper_enabled", False),
-        whisper_model=audio_cfg.get("whisper_model", "tiny.en"),
     )
 
     detection = DetectionConfig(

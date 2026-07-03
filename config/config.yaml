@@ -35,8 +35,6 @@ detection:
     sample_rate: 16000
     energy_threshold: 0.001
     zcr_threshold: 0.35
-    whisper_enabled: false  # Enable only when needed
-    whisper_model: "tiny.en"
         
 alert:
   cooldown: 10                # Minimum seconds between same alert

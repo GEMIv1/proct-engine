@@ -34,7 +34,7 @@ def build_detectors(
     Returns
     -------
     tuple
-        ``(face, gaze, mouth, multi_face, object_detector)``
+        ``(face, gaze, mouth, multi, object_detector)``
     """
     face = FaceDetector(config)
     gaze = GazeDetector(config, smoothing=5)

@@ -10,7 +10,6 @@ torchaudio>=2.1.0
 
 # Audio Processing
 pyaudio>=0.2.13
-openai-whisper>=20231106
 
 
 # Alert System

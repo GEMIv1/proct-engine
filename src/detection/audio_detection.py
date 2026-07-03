@@ -31,11 +31,7 @@ class AudioMonitor:
         self.audio_buffer: deque = deque(maxlen=15)  # 480ms buffer
         self.alert_system = alert_system
 
-        if self.audio_config.whisper_enabled:
-            import whisper  # optional heavy dependency
-            self.whisper_model = whisper.load_model(self.audio_config.whisper_model)
-        else:
-            self.whisper_model = None
+
 
     def start(self):
         """Start audio monitoring thread."""
@@ -107,22 +103,3 @@ class AudioMonitor:
         """Process detected voice."""
         if self.alert_system:
             self.alert_system.speak_alert(AlertType.VOICE_DETECTED)
-
-        if self.audio_config.whisper_enabled and self.whisper_model:
-            self._process_with_whisper()
-
-    def _process_with_whisper(self):
-        """Optional Whisper processing."""
-        try:
-            audio = np.concatenate(self.audio_buffer)
-            result = self.whisper_model.transcribe(
-                audio.astype(np.float32) / 32768.0,
-                fp16=False,
-                language='en'
-            )
-
-            if self.alert_system:
-                    self.alert_system.speak_alert(AlertType.SPEECH_VIOLATION)
-
-        except Exception as e:
-            pass

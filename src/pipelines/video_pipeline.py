@@ -15,7 +15,8 @@ from models import (
     ViolationEntry,
     ViolationType,
 )
-from .pipeline_utils import build_detectors
+from utils.pipeline_utils import build_detectors
+from utils.screenshot_capture import ScreenshotCapture
 
 FRAME_SKIP = 1
 GAZE_FRAME_SKIP = 2
@@ -97,6 +98,8 @@ def process_video(video_path, config, preview=False, save_output=False, student_
         out_writer = cv2.VideoWriter(output_path, fourcc, video_fps,
                                      (video_width, video_height))
 
+    screenshot_capture = ScreenshotCapture(cooldown=config.alert.cooldown)
+
     frame_id = 0
     gaze_counter = 0
     gaze_away_start_frame = None
@@ -152,6 +155,9 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                 frames_absent = frame_id - face_absent_start_frame
                 if frames_absent >= face_absent_threshold_frames:
                     duration = frames_absent / video_fps
+                    img_path = screenshot_capture.capture(
+                        frame, ViolationType.FACE_DISAPPEARED.value, video_timestamp
+                    )
                     violations.append(
                         ViolationEntry(
                             type=ViolationType.FACE_DISAPPEARED,
@@ -159,27 +165,33 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                             metadata={
                                 'duration': f'{duration:.1f} seconds',
                                 'video_time': video_time,
-                                'image_path': None
+                                'image_path': img_path,
                             }
                         )
                     )
                     face_absent_start_frame = None
             elif results.multiple_faces:
                 face_absent_start_frame = None
+                img_path = screenshot_capture.capture(
+                    frame, ViolationType.MULTIPLE_FACES.value, video_timestamp
+                )
                 violations.append(
                     ViolationEntry(
                         type=ViolationType.MULTIPLE_FACES,
                         timestamp=video_timestamp,
-                        metadata={'video_time': video_time, 'image_path': None}
+                        metadata={'video_time': video_time, 'image_path': img_path}
                     )
                 )
             elif results.objects_detected:
                 face_absent_start_frame = None
+                img_path = screenshot_capture.capture(
+                    frame, ViolationType.OBJECT_DETECTED.value, video_timestamp
+                )
                 violations.append(
                     ViolationEntry(
                         type=ViolationType.OBJECT_DETECTED,
                         timestamp=video_timestamp,
-                        metadata={'video_time': video_time, 'image_path': None}
+                        metadata={'video_time': video_time, 'image_path': img_path}
                     )
                 )
             elif gaze_state.gaze.is_away and gaze_state.gaze_conf >= 0.45:
@@ -189,6 +201,9 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                 frames_away = frame_id - gaze_away_start_frame
                 if frames_away >= gaze_away_threshold_frames:
                     duration = frames_away / video_fps
+                    img_path = screenshot_capture.capture(
+                        frame, ViolationType.GAZE_AWAY.value, video_timestamp
+                    )
                     violations.append(
                         ViolationEntry(
                             type=ViolationType.GAZE_AWAY,
@@ -196,7 +211,7 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                             metadata={
                                 'duration': f'{duration:.1f} seconds',
                                 'video_time': video_time,
-                                'image_path': None
+                                'image_path': img_path,
                             }
                         )
                     )
@@ -206,11 +221,14 @@ def process_video(video_path, config, preview=False, save_output=False, student_
                 gaze_away_start_frame = None
 
             if results.mouth_moving:
+                img_path = screenshot_capture.capture(
+                    frame, ViolationType.MOUTH_MOVING.value, video_timestamp
+                )
                 violations.append(
                     ViolationEntry(
                         type=ViolationType.MOUTH_MOVING,
                         timestamp=video_timestamp,
-                        metadata={'video_time': video_time, 'image_path': None}
+                        metadata={'video_time': video_time, 'image_path': img_path}
                     )
                 )
 
