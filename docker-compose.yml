@@ -9,9 +9,8 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=admin
       - RABBITMQ_PASS=admin
-      - SUBMISSIONS_BASE_PATH=/app/submissions
+      - SUBMISSIONS_BASE_PATH=/uploads
     volumes:
-      # Mounts the reports directory (containing violation_captures screenshots) so they are exposed on the host
       - ./reports:/app/reports
-      - ./local_submissions:/app/submissions
+      - ./local_submissions:/uploads
     restart: on-failure

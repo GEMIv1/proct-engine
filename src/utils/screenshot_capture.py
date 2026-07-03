@@ -50,10 +50,12 @@ class ScreenshotCapture:
         self,
         capture_dir: str | Path | None = None,
         cooldown: float = 10.0,
+        submission_id: str | None = None,
     ) -> None:
         self.capture_dir = Path(capture_dir) if capture_dir else _DEFAULT_CAPTURE_DIR
         self.capture_dir.mkdir(parents=True, exist_ok=True)
         self.cooldown = cooldown
+        self.submission_id = submission_id
         self._last_capture: dict[str, float] = {}
 
     # ── public API ──────────────────────────────────────────────
@@ -90,7 +92,10 @@ class ScreenshotCapture:
 
         safe_ts = self._safe_timestamp(timestamp)
         short_id = uuid.uuid4().hex[:6]
-        filename = f"{violation_type}_{safe_ts}_{short_id}.jpg"
+        if self.submission_id:
+            filename = f"{self.submission_id}_{violation_type}_{safe_ts}_{short_id}.jpg"
+        else:
+            filename = f"{violation_type}_{safe_ts}_{short_id}.jpg"
         full_path = self.capture_dir / filename
 
         cv2.imwrite(

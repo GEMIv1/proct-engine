@@ -67,7 +67,8 @@ def process_live(config=None, student_info=None, preview=True):
     if config is None:
         config = load_config()
     alert_system = AlertSystem(config)
-    screenshot_capture = ScreenshotCapture(cooldown=config.alert.cooldown)
+    submission_id = student_info.get("submission_id") if student_info else None
+    screenshot_capture = ScreenshotCapture(cooldown=config.alert.cooldown, submission_id=submission_id)
     violations = []
 
     video_recorder = VideoRecorder(config)

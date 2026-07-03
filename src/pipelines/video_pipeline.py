@@ -98,7 +98,8 @@ def process_video(video_path, config, preview=False, save_output=False, student_
         out_writer = cv2.VideoWriter(output_path, fourcc, video_fps,
                                      (video_width, video_height))
 
-    screenshot_capture = ScreenshotCapture(cooldown=config.alert.cooldown)
+    submission_id = student_info.get("submission_id") if student_info else None
+    screenshot_capture = ScreenshotCapture(cooldown=config.alert.cooldown, submission_id=submission_id)
 
     frame_id = 0
     gaze_counter = 0

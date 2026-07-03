@@ -64,6 +64,7 @@ def process_message(body: bytes) -> dict:
             "name": request.user_full_name or "Unknown Student",
             "exam": f"Quiz: {request.quiz_id}" if request.quiz_id else "Automated Analysis",
             "course": "N/A",
+            "submission_id": request.quiz_submission_id,
         }
 
         proctor = ExamProctor()
