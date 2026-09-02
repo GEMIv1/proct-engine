@@ -26,13 +26,11 @@ class AlertSystem:
         }
 
     def _can_alert(self, alert_type: Union[ViolationType, AlertType]) -> bool:
-        """Check if enough time has passed since last alert."""
         current_time = time.time()
         last_time = self.last_alert_time.get(alert_type, 0)
         return (current_time - last_time) >= self.alert_cooldown
 
     def speak_alert(self, alert_type: Union[ViolationType, AlertType]):
-        """Convert text to speech and play it asynchronously."""
         if not self._can_alert(alert_type):
             return
 

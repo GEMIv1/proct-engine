@@ -41,10 +41,8 @@ class GazeDetector(BaseDetector):
         self.last_good_state = GazeState()
         self.frames_since_detection = 0
 
-        # Store configuration or fallback to defaults
         self.eyes_config = config.detection.eyes if config else EyeDetectionConfig()
         
-        # Load from config or EyeDetectionConfig defaults
         self.iris_up_thresh = self.eyes_config.iris_up_thresh
         self.iris_down_thresh = self.eyes_config.iris_down_thresh
         self.gaze_left_thresh = self.eyes_config.gaze_left_thresh
@@ -55,18 +53,10 @@ class GazeDetector(BaseDetector):
         self.max_frame_dim = self.eyes_config.max_frame_dim
 
     def close(self):
-        """Close MediaPipe FaceMesh resources."""
         self.face_mesh.close()
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def calibrate(self, frame: np.ndarray) -> bool:
-        """Calibrate baseline using current frame (user looks at the camera/screen).
-
-        Returns True if a non-uncertain gaze was obtained and baseline stored.
-        """
         state = self.process(frame)
         if state.gaze != GazeDirection.UNCERTAIN:
             self.baseline_x = state.pupil_rel.x
@@ -76,7 +66,6 @@ class GazeDetector(BaseDetector):
         return False
 
     def process(self, frame: np.ndarray, **kwargs) -> GazeState:
-        """Process a BGR frame and return a GazeState."""
         h, w = frame.shape[:2]
         frame_small, scale_back = self._downscale_frame(frame)
         small_h, small_w = frame_small.shape[:2]
@@ -101,7 +90,6 @@ class GazeDetector(BaseDetector):
         nx = (lx + rx) / 2
         ny = (ly + ry) / 2
 
-        # Blend iris-relative position with absolute pupil position
         pupil_x = (l_center[0] + r_center[0]) / 2 / max(w, 1)
         pupil_y = (l_center[1] + r_center[1]) / 2 / max(h, 1)
         nx = self.iris_pupil_blend * nx + (1 - self.iris_pupil_blend) * pupil_x
@@ -126,15 +114,7 @@ class GazeDetector(BaseDetector):
         self.last_good_state = result
         return result
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
-
     def _downscale_frame(self, frame: np.ndarray) -> tuple[np.ndarray, float]:
-        """Downscale frame so its longest edge is at most max_frame_dim.
-
-        Returns the (possibly downscaled) frame and the inverse scale factor.
-        """
         h, w = frame.shape[:2]
         if max(h, w) > self.max_frame_dim:
             scale = self.max_frame_dim / max(h, w)
@@ -142,19 +122,13 @@ class GazeDetector(BaseDetector):
             return cv2.resize(frame, (new_w, new_h)), max(h, w) / self.max_frame_dim
         return frame, 1.0
 
-    def _lm_to_pixel(
-        self, lm_point, small_w: int, small_h: int, scale_back: float
-    ) -> tuple[int, int]:
-        """Convert a normalized MediaPipe landmark to original-frame pixel coordinates."""
+    def _lm_to_pixel(self, lm_point, small_w: int, small_h: int, scale_back: float) -> tuple[int, int]:
         return (
             int(lm_point.x * small_w * scale_back),
             int(lm_point.y * small_h * scale_back),
         )
 
-    def _extract_eye_coords(
-        self, lm, small_w: int, small_h: int, scale_back: float
-    ) -> tuple:
-        """Extract pixel coordinates for both eye corners and iris centers."""
+    def _extract_eye_coords(self, lm, small_w: int, small_h: int, scale_back: float) -> tuple:
         l_min    = self._lm_to_pixel(lm[_LandmarkIndex.LEFT_EYE_IDX[0]],    small_w, small_h, scale_back)
         l_max    = self._lm_to_pixel(lm[_LandmarkIndex.LEFT_EYE_IDX[1]],    small_w, small_h, scale_back)
         l_center = self._lm_to_pixel(lm[_LandmarkIndex.LEFT_IRIS_CENTER],    small_w, small_h, scale_back)
@@ -164,14 +138,12 @@ class GazeDetector(BaseDetector):
         return l_min, l_max, l_center, r_min, r_max, r_center
 
     def _normalize(self, c, mn, mx) -> tuple[float, float]:
-        """Normalize point c into [0, 1] using min (mn) and max (mx) corners."""
         return (
             (c[0] - mn[0]) / (mx[0] - mn[0] + 1e-6),
             (c[1] - mn[1]) / (mx[1] - mn[1] + 1e-6),
         )
 
     def _smooth_and_calibrate(self, nx: float, ny: float) -> tuple[float, float]:
-        """Apply moving-average smoothing and subtract calibration baseline."""
         self.buffer_x.append(nx)
         self.buffer_y.append(ny)
         nx = float(np.mean(self.buffer_x))
@@ -182,7 +154,6 @@ class GazeDetector(BaseDetector):
         return nx, ny
 
     def _calc_iris_vertical_ratio(self, lm, small_h: int, scale_back: float) -> float:
-        """Calculate vertical iris position ratio within the eyelid opening for both eyes."""
         r_iris_y   = lm[_LandmarkIndex.RIGHT_IRIS_CENTER].y * small_h * scale_back
         r_top_y    = lm[_LandmarkIndex.RIGHT_TOP].y          * small_h * scale_back
         r_bottom_y = lm[_LandmarkIndex.RIGHT_BOTTOM].y       * small_h * scale_back
@@ -195,10 +166,7 @@ class GazeDetector(BaseDetector):
         l_ratio = (l_iris_y - l_top_y) / (l_bottom_y - l_top_y + 1e-6)
         return (r_ratio + l_ratio) / 2.0
 
-    def _classify_gaze(
-        self, nx: float, ny: float, iris_vert_ratio: float
-    ) -> tuple[GazeDirection, float]:
-        """Map smoothed gaze coordinates to a GazeDirection and confidence score."""
+    def _classify_gaze(self, nx: float, ny: float, iris_vert_ratio: float) -> tuple[GazeDirection, float]:
         v_gaze = GazeDirection.ON_SCREEN
         v_conf = 0.6
 
@@ -219,7 +187,6 @@ class GazeDetector(BaseDetector):
             h_gaze = GazeDirection.OFF_RIGHT
             h_conf = min(1.0, (nx - self.gaze_right_thresh) * 5 + 0.6)
 
-        # Pick the direction with the higher confidence if looking away, or default to ON_SCREEN
         if v_gaze != GazeDirection.ON_SCREEN and h_gaze != GazeDirection.ON_SCREEN:
             if h_conf >= v_conf:
                 return h_gaze, h_conf

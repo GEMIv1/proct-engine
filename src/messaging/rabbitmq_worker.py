@@ -1,16 +1,3 @@
-"""
-RabbitMQ consumer worker for cheating-detection requests.
-
-Listens on ``cheating-detection-queue``, runs each video through the
-detection pipeline, and publishes the result to
-``cheating-detection-result-queue``.
-
-Run with::
-
-    cd src
-    python -m messaging.rabbitmq_worker
-"""
-
 import sys
 import os
 import json

@@ -23,7 +23,6 @@ GAZE_FRAME_SKIP = 2
 
 
 def format_time(seconds):
-    """Format seconds into HH:MM:SS.ms string."""
     if seconds is None or seconds < 0:
         seconds = 0
     seconds = min(seconds, 360_000)
@@ -38,15 +37,6 @@ def format_time(seconds):
 
 
 def process_video(video_path, config, preview=False, save_output=False, student_info=None):
-    """Process a video file through the full detection pipeline.
-
-    Returns
-    -------
-    dict
-        A dictionary with keys ``violations``,
-        ``frames_processed``, and ``output_path``.
-    """
-
     if not os.path.isfile(video_path):
         raise FileNotFoundError(f"Video file not found: {video_path}")
 
@@ -269,22 +259,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Process a recorded video through the exam proctoring detection pipeline.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python -m video_pipeline recordings/exam_session.mp4
-  python -m video_pipeline recordings/exam_session.mp4 --preview
-  python -m video_pipeline recordings/exam_session.mp4 --save-output --student-id S042
-        """
     )
     parser.add_argument('video', help='Path to the video file to analyze')
-    parser.add_argument('--preview', action='store_true',
-                        help='Show annotated video playback during processing')
-    parser.add_argument('--save-output', action='store_true',
-                        help='Save the annotated video to the recordings directory')
-    parser.add_argument('--student-id', default=None,
-                        help='Student ID for the report (default: VIDEO_ANALYSIS)')
-    parser.add_argument('--student-name', default=None,
-                        help='Student name for the report')
+    parser.add_argument('--preview', action='store_true', help='Show annotated video playback during processing')
+    parser.add_argument('--save-output', action='store_true', help='Save the annotated video to the recordings directory')
+    parser.add_argument('--student-id', default=None, help='Student ID for the report (default: VIDEO_ANALYSIS)')
+    parser.add_argument('--student-name', default=None, help='Student name for the report')
 
     args = parser.parse_args()
 

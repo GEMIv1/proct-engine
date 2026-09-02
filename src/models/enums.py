@@ -18,7 +18,7 @@ class AlertType(str, Enum):
     SPEECH_VIOLATION = "SPEECH_VIOLATION"
     FORBIDDEN_OBJECT = "FORBIDDEN_OBJECT"
     OBJECT_DETECTION_ERROR = "OBJECT_DETECTION_ERROR"
-    MOUTH_MOVEMENT = "MOUTH_MOVEMENT"  # internal detector signal
+    MOUTH_MOVEMENT = "MOUTH_MOVEMENT"
 
 
 class GazeDirection(str, Enum):

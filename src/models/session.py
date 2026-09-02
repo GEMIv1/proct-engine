@@ -4,7 +4,6 @@ from .enums import ViolationType
 
 @dataclass
 class ViolationEntry:
-    """A single logged violation."""
     type: ViolationType
     timestamp: str
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -19,7 +18,6 @@ class ViolationEntry:
 
 @dataclass
 class RecordingResult:
-    """Metadata returned when a recording is stopped."""
     filename: str
     frame_count: int = 0
     duration: float = 0.0

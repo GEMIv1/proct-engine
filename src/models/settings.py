@@ -12,7 +12,7 @@ class VideoConfig:
 class FaceDetectionConfig:
     detection_interval: int = 5
     min_confidence: float = 0.8
-    face_absent_threshold: int = 3  # seconds before flagging face disappeared
+    face_absent_threshold: int = 3
 
 
 @dataclass
@@ -98,7 +98,6 @@ class RabbitMQConfig:
 
 @dataclass
 class AppConfig:
-    """Top‑level application configuration – aggregates every section."""
     video: VideoConfig = field(default_factory=VideoConfig)
     detection: DetectionConfig = field(default_factory=DetectionConfig)
     alert: AlertConfig = field(default_factory=AlertConfig)

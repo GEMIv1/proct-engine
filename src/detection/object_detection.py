@@ -23,13 +23,12 @@ class ObjectDetector(BaseDetector):
         self.last_detection_time = datetime.now()
 
     def _initialize_model(self):
-        """Initialize optimized YOLO model using path from config."""
         try:
             self.model = YOLO(self.obj_config.model_path)
 
             self.model.overrides['conf'] = self.obj_config.min_confidence
             self.model.overrides['device'] = 'cuda' if torch.cuda.is_available() else 'cpu'
-            self.model.overrides['iou'] = 0.45   # Slightly higher IOU threshold
+            self.model.overrides['iou'] = 0.45
 
             dummy_input = torch.zeros((1, 3, 640, 480)).to(self.model.device)
             self.model(dummy_input)
@@ -38,7 +37,6 @@ class ObjectDetector(BaseDetector):
             raise RuntimeError(f"Failed to initialize object detector: {str(e)}")
 
     def process(self, frame, visualize=False, **kwargs) -> bool:
-        """Optimized object detection with frame skipping."""
         current_time = datetime.now()
         time_since_last = (current_time - self.last_detection_time).total_seconds()
 
@@ -81,5 +79,4 @@ class ObjectDetector(BaseDetector):
             return False
 
     def close(self):
-        """Clean up YOLO detector resources."""
         self.model = None

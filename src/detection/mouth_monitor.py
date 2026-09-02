@@ -29,7 +29,6 @@ class MouthMonitor(BaseDetector):
         self.mouth_movement_count = 0
 
     def close(self):
-        """Close MediaPipe FaceMesh resources."""
         self.face_mesh.close()
 
     def process(self, frame: np.ndarray, **kwargs) -> bool:

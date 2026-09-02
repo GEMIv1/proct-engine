@@ -8,45 +8,29 @@ from models import AppConfig, AlertType
 
 
 class AudioMonitor:
-    def __init__(
-        self,
-        config: AppConfig,
-        alert_system=None,
-    ):
-        """
-        Parameters
-        ----------
-        config:
-            Application configuration.
-        alert_system:
-            Optional :class:`~utils.alert_system.AlertSystem` for voice alerts.
-            Accepts ``None`` for headless / test environments.
-        """
+    def __init__(self, config: AppConfig, alert_system=None):
         self.audio_config = config.detection.audio_monitoring
         self.sample_rate = self.audio_config.sample_rate
-        self.chunk_size = 512  # 32ms chunks for low latency
+        self.chunk_size = 512  
         self.energy_threshold = self.audio_config.energy_threshold
         self.zcr_threshold = self.audio_config.zcr_threshold
         self.running = False
-        self.audio_buffer: deque = deque(maxlen=15)  # 480ms buffer
+        self.audio_buffer: deque = deque(maxlen=15) 
         self.alert_system = alert_system
 
 
 
     def start(self):
-        """Start audio monitoring thread."""
         self.running = True
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
     def stop(self):
-        """Stop audio monitoring."""
         self.running = False
         if hasattr(self, 'thread') and self.thread.is_alive():
             self.thread.join(timeout=1)
 
     def _run(self):
-        """Main audio processing loop."""
         try:
             p = pyaudio.PyAudio()
         except Exception as e:
@@ -84,15 +68,12 @@ class AudioMonitor:
             p.terminate()
 
     def _is_voice(self, audio: np.ndarray) -> bool:
-        """Ultra-fast voice detection."""
         audio_norm = audio / 32768.0
 
-        # 1. Energy detection
         energy = np.mean(audio_norm ** 2)
         if energy < self.energy_threshold:
             return False
 
-        # 2. Zero-crossing rate
         zcr = np.mean(np.abs(np.diff(np.sign(audio_norm))))
         if zcr > self.zcr_threshold:
             return False
@@ -100,6 +81,5 @@ class AudioMonitor:
         return True
 
     def _handle_voice_detection(self):
-        """Process detected voice."""
         if self.alert_system:
             self.alert_system.speak_alert(AlertType.VOICE_DETECTED)

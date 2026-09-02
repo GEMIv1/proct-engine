@@ -22,21 +22,10 @@ FRAME_SKIP = 2
 GAZE_FRAME_SKIP = 2
 
 
-def _handle_violation(
-    violation_type: ViolationType,
-    alert_system: AlertSystem,
-    violations: list[ViolationEntry],
-    results: DetectionResult,
-    gaze_state: GazeState,
-    frame: np.ndarray,
-    screenshot_capture: ScreenshotCapture,
-    extra_metadata: dict | None = None,
-):
-    """Centralised violation handling: speak alert, capture screenshot, log."""
+def _handle_violation(violation_type: ViolationType, alert_system: AlertSystem, violations: list[ViolationEntry], results: DetectionResult, gaze_state: GazeState, frame: np.ndarray, screenshot_capture: ScreenshotCapture, extra_metadata: dict | None = None):
     alert_system.speak_alert(violation_type)
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    # Capture an annotated screenshot of the violation frame
     image_path = screenshot_capture.capture(frame, violation_type.value, timestamp)
 
     metadata = extra_metadata or {}
@@ -203,7 +192,6 @@ def process_live(config=None, student_info=None, preview=True):
             frame_id += 1
 
     finally:
-        # Stop audio monitor if active
         if config.detection.audio_monitoring.enabled and 'audio_monitor' in locals() and audio_monitor is not None:
             try:
                 audio_monitor.stop()

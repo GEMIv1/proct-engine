@@ -33,5 +33,4 @@ class MultiFaceDetector(BaseDetector):
         return False
 
     def close(self):
-        """Close MediaPipe FaceDetection resources."""
         self.detector.close()

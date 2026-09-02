@@ -1,11 +1,3 @@
-"""
-Centralised configuration loader.
-
-Reads ``config/config.yaml`` and returns a fully‑typed :class:`AppConfig`
-dataclass instance, replacing the duplicated ``load_config()`` helpers that
-previously existed in both ``main.py`` and ``process_video.py``.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -33,19 +25,6 @@ _CONFIG_PATH = _PROJECT_ROOT / "config" / "config.yaml"
 
 
 def load_config(path: Path | str | None = None) -> AppConfig:
-    """Load and parse ``config.yaml`` into an :class:`AppConfig` instance.
-
-    Parameters
-    ----------
-    path:
-        Optional override for the config file location.  Defaults to
-        ``config/config.yaml`` relative to the working directory.
-
-    Returns
-    -------
-    AppConfig
-        A fully populated configuration dataclass.
-    """
     config_path = Path(path) if path else _CONFIG_PATH
 
     with open(config_path, encoding="utf-8") as f:

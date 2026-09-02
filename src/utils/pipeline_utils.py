@@ -1,11 +1,3 @@
-"""
-pipeline_utils — shared helpers used by both pipeline entry points.
-
-Provides :func:`build_detectors` to construct and wire all detectors in
-one place, eliminating the copy-paste that previously existed in both
-``live_pipeline.py`` and ``video_pipeline.py``.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -21,21 +13,7 @@ if TYPE_CHECKING:
     from models import AppConfig
 
 
-def build_detectors(
-    config: "AppConfig",
-) -> tuple[BaseDetector, BaseDetector, BaseDetector, BaseDetector, BaseDetector]:
-    """Construct and wire all CV detectors.
-
-    Parameters
-    ----------
-    config:
-        Fully-loaded :class:`~models.AppConfig` instance.
-
-    Returns
-    -------
-    tuple
-        ``(face, gaze, mouth, multi, object_detector)``
-    """
+def build_detectors(config: "AppConfig") -> tuple[BaseDetector, BaseDetector, BaseDetector, BaseDetector, BaseDetector]:
     face = FaceDetector(config)
     gaze = GazeDetector(config, smoothing=5)
     mouth = MouthMonitor(config)

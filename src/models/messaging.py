@@ -4,12 +4,6 @@ from typing import Optional
 
 @dataclass
 class CheatingDetectionRequest:
-    """Incoming message from the .NET backend requesting cheating analysis.
-
-    Field names use snake_case; the worker converts PascalCase JSON keys
-    from .NET before constructing this dataclass.
-    """
-
     quiz_submission_id: str = ""
     quiz_id: str = ""
     student_user_id: str = ""
@@ -23,12 +17,6 @@ class CheatingDetectionRequest:
 
 @dataclass
 class CheatingDetectionResult:
-    """Result sent back to the .NET backend after processing.
-
-    Field names use snake_case; the worker converts to PascalCase
-    before publishing the JSON response.
-    """
-
     quiz_submission_id: str = ""
     risk_score: float = 0.0
     suspicious_behavior: str = ""

@@ -7,22 +7,6 @@ from models import DetectionResult, GazeState
 
 
 def annotate_frame(frame: np.ndarray, results: DetectionResult, gaze_state: GazeState) -> np.ndarray:
-    """Draw detection overlays and gaze/score info onto *frame*.
-
-    Parameters
-    ----------
-    frame:
-        BGR image (numpy array) to annotate.
-    results:
-        Aggregated detection results for this frame.
-    gaze_state:
-        Current gaze estimation state.
-
-    Returns
-    -------
-    np.ndarray
-        A *copy* of *frame* with overlays drawn on it.
-    """
     out = frame.copy()
     y_offset = 30
     line_height = 30

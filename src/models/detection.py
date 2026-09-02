@@ -3,7 +3,6 @@ from .enums import GazeDirection
 
 @dataclass
 class DetectionResult:
-    """Aggregated per‑frame detection results."""
     face_present: bool = False
     gaze_direction: GazeDirection = GazeDirection.ON_SCREEN
     gaze_conf: float = 0.0
